@@ -19,7 +19,7 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate, events = [] }) 
 
   const cells = [];
   for (let i = 0; i < firstDay; i++) {
-    cells.push(<div key={`empty-${i}`} className="h-12" />);
+    cells.push(<div key={`empty-${i}`} className="h-10 sm:h-12" />);
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
@@ -32,7 +32,7 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate, events = [] }) 
       <button
         key={day}
         onClick={() => onSelectDate(dateStr)}
-        className={`relative flex h-12 items-center justify-center rounded-lg text-sm font-medium transition-colors
+        className={`relative flex h-10 items-center justify-center rounded-lg text-xs font-medium transition-colors sm:h-12 sm:text-sm
           ${isSelected ? 'bg-blue-600 text-white' : ''}
           ${!isSelected && isToday ? 'bg-blue-50 text-blue-600' : ''}
           ${!isSelected && !isToday ? 'text-gray-700 hover:bg-gray-100' : ''}

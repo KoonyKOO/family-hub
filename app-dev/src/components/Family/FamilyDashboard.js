@@ -3,11 +3,11 @@ import React from 'react';
 const FamilyDashboard = ({ family, members, onLeave }) => {
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800">{family.name}</h2>
+      <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-lg font-bold text-gray-800 sm:text-xl">{family.name}</h2>
         <button
           onClick={onLeave}
-          className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+          className="w-full rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 sm:w-auto"
         >
           Leave Family
         </button>

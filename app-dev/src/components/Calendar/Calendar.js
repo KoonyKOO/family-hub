@@ -81,7 +81,7 @@ const Calendar = () => {
       <h2 className="mb-4 text-xl font-bold text-gray-800">Calendar</h2>
       {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         <div>
           <div className="mb-4 flex items-center justify-between">
             <button

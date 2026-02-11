@@ -30,24 +30,24 @@ const EventList = ({ events = [], onEdit, onDelete, onAdd }) => {
         {events.map((event) => (
           <li
             key={event.id}
-            className="flex items-start justify-between rounded-lg border border-gray-200 p-3"
+            className="rounded-lg border border-gray-200 p-2.5 sm:p-3"
           >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                {event.color && (
-                  <span
-                    className="inline-block h-3 w-3 rounded-full"
-                    style={{ backgroundColor: event.color }}
-                  />
-                )}
-                <p className="truncate text-sm font-medium text-gray-800">{event.title}</p>
-              </div>
-              {event.time && <p className="mt-0.5 text-xs text-gray-500">{event.time}</p>}
-              {event.description && (
-                <p className="mt-1 text-xs text-gray-500">{event.description}</p>
+            <div className="flex items-start gap-2">
+              {event.color && (
+                <span
+                  className="mt-1 inline-block h-3 w-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: event.color }}
+                />
               )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-gray-800">{event.title}</p>
+                {event.time && <p className="mt-0.5 text-xs text-gray-500">{event.time}</p>}
+                {event.description && (
+                  <p className="mt-1 text-xs text-gray-500">{event.description}</p>
+                )}
+              </div>
             </div>
-            <div className="ml-2 flex gap-1">
+            <div className="mt-1.5 flex justify-end gap-1">
               <button
                 onClick={() => onEdit(event)}
                 className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"

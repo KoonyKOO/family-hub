@@ -1,69 +1,82 @@
 const express = require('express');
-const store = require('../store');
+const Event = require('../models/Event');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
 
 router.use(auth);
 
-router.get('/', (req, res) => {
-  const { year, month } = req.query;
-  let events = store.events.filter((e) => e.familyId === req.user.familyId);
+router.get('/', async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    const query = { familyId: req.user.familyId };
 
-  if (year && month) {
-    const prefix = `${year}-${String(month).padStart(2, '0')}`;
-    events = events.filter((e) => e.date?.startsWith(prefix));
+    if (year && month) {
+      const prefix = `${year}-${String(month).padStart(2, '0')}`;
+      query.date = { $regex: `^${prefix}` };
+    }
+
+    const events = await Event.find(query).sort({ date: 1, time: 1 });
+    res.json({ events: events.map((e) => ({ id: e._id, ...e.toObject() })) });
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch events' });
   }
-
-  res.json({ events });
 });
 
-router.post('/', (req, res) => {
-  const { title, description, date, time, color } = req.body;
+router.post('/', async (req, res) => {
+  try {
+    const { title, description, date, time, color } = req.body;
 
-  if (!title || !date) {
-    return res.status(400).json({ error: 'Title and date are required' });
+    if (!title || !date) {
+      return res.status(400).json({ error: 'Title and date are required' });
+    }
+
+    const event = await Event.create({
+      title,
+      description: description || '',
+      date,
+      time: time || '',
+      color: color || '#3b82f6',
+      familyId: req.user.familyId,
+      createdBy: req.user._id,
+    });
+
+    res.status(201).json({ event: { id: event._id, ...event.toObject() } });
+  } catch {
+    res.status(500).json({ error: 'Failed to create event' });
   }
-
-  const event = {
-    id: store.generateId(),
-    title,
-    description: description || '',
-    date,
-    time: time || '',
-    color: color || '#3b82f6',
-    familyId: req.user.familyId,
-    createdBy: req.user.id,
-  };
-
-  store.events.push(event);
-  res.status(201).json({ event });
 });
 
-router.put('/:id', (req, res) => {
-  const event = store.events.find((e) => e.id === req.params.id && e.familyId === req.user.familyId);
-  if (!event) {
-    return res.status(404).json({ error: 'Event not found' });
+router.put('/:id', async (req, res) => {
+  try {
+    const event = await Event.findOneAndUpdate(
+      { _id: req.params.id, familyId: req.user.familyId },
+      { $set: req.body },
+      { new: true }
+    );
+
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    res.json({ event: { id: event._id, ...event.toObject() } });
+  } catch {
+    res.status(500).json({ error: 'Failed to update event' });
   }
-
-  const { title, description, date, time, color } = req.body;
-  if (title !== undefined) event.title = title;
-  if (description !== undefined) event.description = description;
-  if (date !== undefined) event.date = date;
-  if (time !== undefined) event.time = time;
-  if (color !== undefined) event.color = color;
-
-  res.json({ event });
 });
 
-router.delete('/:id', (req, res) => {
-  const idx = store.events.findIndex((e) => e.id === req.params.id && e.familyId === req.user.familyId);
-  if (idx === -1) {
-    return res.status(404).json({ error: 'Event not found' });
-  }
+router.delete('/:id', async (req, res) => {
+  try {
+    const event = await Event.findOneAndDelete({ _id: req.params.id, familyId: req.user.familyId });
 
-  store.events.splice(idx, 1);
-  res.json({ success: true });
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: 'Failed to delete event' });
+  }
 });
 
 module.exports = router;

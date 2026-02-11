@@ -1,47 +1,47 @@
 const express = require('express');
-const store = require('../store');
+const User = require('../models/User');
 
 const router = express.Router();
 
-router.post('/signup', (req, res) => {
-  const { name, email, password } = req.body;
+router.post('/signup', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: 'Name, email, and password are required' });
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const user = await User.create({ name, email, password });
+    const safeUser = { id: user._id, name: user.name, email: user.email, familyId: user.familyId };
+    res.status(201).json({ user: safeUser });
+  } catch (err) {
+    res.status(500).json({ error: 'Signup failed' });
   }
-
-  if (store.users.find((u) => u.email === email)) {
-    return res.status(400).json({ error: 'Email already registered' });
-  }
-
-  const user = {
-    id: store.generateId(),
-    name,
-    email,
-    password,
-    familyId: null,
-  };
-
-  store.users.push(user);
-
-  const { password: _, ...safeUser } = user;
-  res.status(201).json({ user: safeUser });
 });
 
-router.post('/login', (req, res) => {
-  const { email, password } = req.body;
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const user = await User.findOne({ email, password });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const safeUser = { id: user._id, name: user.name, email: user.email, familyId: user.familyId };
+    res.json({ user: safeUser });
+  } catch (err) {
+    res.status(500).json({ error: 'Login failed' });
   }
-
-  const user = store.users.find((u) => u.email === email && u.password === password);
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid email or password' });
-  }
-
-  const { password: _, ...safeUser } = user;
-  res.json({ user: safeUser });
 });
 
 module.exports = router;

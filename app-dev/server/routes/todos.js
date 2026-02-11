@@ -1,62 +1,73 @@
 const express = require('express');
-const store = require('../store');
+const Todo = require('../models/Todo');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
 
 router.use(auth);
 
-router.get('/', (req, res) => {
-  const todos = store.todos.filter((t) => t.familyId === req.user.familyId);
-  res.json({ todos });
+router.get('/', async (req, res) => {
+  try {
+    const todos = await Todo.find({ familyId: req.user.familyId }).sort({ createdAt: -1 });
+    res.json({ todos: todos.map((t) => ({ id: t._id, ...t.toObject() })) });
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch todos' });
+  }
 });
 
-router.post('/', (req, res) => {
-  const { title, description, priority, dueDate } = req.body;
+router.post('/', async (req, res) => {
+  try {
+    const { title, description, priority, dueDate } = req.body;
 
-  if (!title) {
-    return res.status(400).json({ error: 'Title is required' });
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const todo = await Todo.create({
+      title,
+      description: description || '',
+      priority: priority || 'medium',
+      dueDate: dueDate || '',
+      familyId: req.user.familyId,
+      createdBy: req.user._id,
+    });
+
+    res.status(201).json({ todo: { id: todo._id, ...todo.toObject() } });
+  } catch {
+    res.status(500).json({ error: 'Failed to create todo' });
   }
-
-  const todo = {
-    id: store.generateId(),
-    title,
-    description: description || '',
-    priority: priority || 'medium',
-    dueDate: dueDate || '',
-    completed: false,
-    familyId: req.user.familyId,
-    createdBy: req.user.id,
-  };
-
-  store.todos.push(todo);
-  res.status(201).json({ todo });
 });
 
-router.put('/:id', (req, res) => {
-  const todo = store.todos.find((t) => t.id === req.params.id && t.familyId === req.user.familyId);
-  if (!todo) {
-    return res.status(404).json({ error: 'Todo not found' });
+router.put('/:id', async (req, res) => {
+  try {
+    const todo = await Todo.findOneAndUpdate(
+      { _id: req.params.id, familyId: req.user.familyId },
+      { $set: req.body },
+      { new: true }
+    );
+
+    if (!todo) {
+      return res.status(404).json({ error: 'Todo not found' });
+    }
+
+    res.json({ todo: { id: todo._id, ...todo.toObject() } });
+  } catch {
+    res.status(500).json({ error: 'Failed to update todo' });
   }
-
-  const { title, description, priority, dueDate, completed } = req.body;
-  if (title !== undefined) todo.title = title;
-  if (description !== undefined) todo.description = description;
-  if (priority !== undefined) todo.priority = priority;
-  if (dueDate !== undefined) todo.dueDate = dueDate;
-  if (completed !== undefined) todo.completed = completed;
-
-  res.json({ todo });
 });
 
-router.delete('/:id', (req, res) => {
-  const idx = store.todos.findIndex((t) => t.id === req.params.id && t.familyId === req.user.familyId);
-  if (idx === -1) {
-    return res.status(404).json({ error: 'Todo not found' });
-  }
+router.delete('/:id', async (req, res) => {
+  try {
+    const todo = await Todo.findOneAndDelete({ _id: req.params.id, familyId: req.user.familyId });
 
-  store.todos.splice(idx, 1);
-  res.json({ success: true });
+    if (!todo) {
+      return res.status(404).json({ error: 'Todo not found' });
+    }
+
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: 'Failed to delete todo' });
+  }
 });
 
 module.exports = router;

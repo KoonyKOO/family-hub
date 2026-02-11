@@ -31,8 +31,10 @@ const TodoItem = ({ todo, onToggle, onEdit, onDelete }) => {
           {todo.description && (
             <p className="mt-0.5 text-xs text-gray-500">{todo.description}</p>
           )}
-          {todo.dueDate && (
-            <p className="mt-0.5 text-xs text-gray-400">Due: {todo.dueDate}</p>
+          {(todo.dueDate || todo.dueTime) && (
+            <p className="mt-0.5 text-xs text-gray-400">
+              Due: {todo.dueDate}{todo.dueTime ? ` ${todo.dueTime}` : ''}
+            </p>
           )}
         </div>
       </div>

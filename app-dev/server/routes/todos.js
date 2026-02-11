@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { title, description, priority, dueDate } = req.body;
+    const { title, description, priority, dueDate, dueTime } = req.body;
 
     if (!title) {
       return res.status(400).json({ error: 'Title is required' });
@@ -31,6 +31,7 @@ router.post('/', async (req, res) => {
       description: description || '',
       priority: priority || 'medium',
       dueDate: dueDate || '',
+      dueTime: dueTime || '',
       familyId: req.user.familyId || null,
       createdBy: req.user._id,
     });

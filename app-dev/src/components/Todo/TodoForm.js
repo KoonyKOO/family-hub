@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 
+const TIME_OPTIONS = [];
+for (let h = 0; h < 24; h++) {
+  for (let m = 0; m < 60; m += 30) {
+    const val = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    const label = `${h === 0 ? 12 : h > 12 ? h - 12 : h}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+    TIME_OPTIONS.push({ val, label });
+  }
+}
+
 const TodoForm = ({ todo, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     title: todo?.title || '',
     description: todo?.description || '',
     priority: todo?.priority || 'medium',
     dueDate: todo?.dueDate || '',
+    dueTime: todo?.dueTime || '',
   });
   const [error, setError] = useState('');
 
@@ -81,6 +91,22 @@ const TodoForm = ({ todo, onSubmit, onCancel }) => {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="todo-dueTime" className="mb-1 block text-sm font-medium text-gray-700">Due Time</label>
+        <select
+          id="todo-dueTime"
+          name="dueTime"
+          value={formData.dueTime}
+          onChange={handleChange}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">No time</option>
+          {TIME_OPTIONS.map(({ val, label }) => (
+            <option key={val} value={val}>{label}</option>
+          ))}
+        </select>
       </div>
 
       <div className="flex gap-3">

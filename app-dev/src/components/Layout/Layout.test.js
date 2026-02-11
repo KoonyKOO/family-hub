@@ -27,8 +27,7 @@ describe('Layout', () => {
   test('renders navigation links', () => {
     renderLayout();
     expect(screen.getByText('Family Hub')).toBeInTheDocument();
-    expect(screen.getByText('Calendar')).toBeInTheDocument();
-    expect(screen.getByText('Todos')).toBeInTheDocument();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Family')).toBeInTheDocument();
   });
 

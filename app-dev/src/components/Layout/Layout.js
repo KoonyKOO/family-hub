@@ -3,8 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
-  { to: '/calendar', label: 'Calendar' },
-  { to: '/todos', label: 'Todos' },
+  { to: '/', label: 'Dashboard' },
   { to: '/family', label: 'Family' },
 ];
 
@@ -14,7 +13,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-6">
             <span className="text-lg font-bold text-blue-600">Family Hub</span>
             <div className="flex gap-1">
@@ -22,6 +21,7 @@ const Layout = () => {
                 <NavLink
                   key={to}
                   to={to}
+                  end
                   className={({ isActive }) =>
                     `rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                       isActive
@@ -46,7 +46,7 @@ const Layout = () => {
           </div>
         </div>
       </nav>
-      <main className="mx-auto max-w-5xl p-4">
+      <main className="mx-auto max-w-7xl p-4">
         <Outlet />
       </main>
     </div>

@@ -31,13 +31,14 @@ describe('App', () => {
   });
 
   test('redirects unauthenticated user to /login', () => {
-    renderApp('/calendar');
+    renderApp('/');
     expect(screen.getByRole('heading', { name: 'Login' })).toBeInTheDocument();
   });
 
-  test('renders calendar page when authenticated', () => {
+  test('renders dashboard with calendar and todos when authenticated', () => {
     localStorage.setItem('user', JSON.stringify({ id: '1', name: 'Alice', email: 'a@b.com' }));
-    renderApp('/calendar');
+    renderApp('/');
     expect(screen.getByRole('heading', { name: 'Calendar' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Todos' })).toBeInTheDocument();
   });
 });

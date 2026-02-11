@@ -6,8 +6,7 @@ import ProtectedRoute from './components/Layout/ProtectedRoute';
 import Layout from './components/Layout/Layout';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import CalendarPage from './pages/CalendarPage';
-import TodoPage from './pages/TodoPage';
+import DashboardPage from './pages/DashboardPage';
 import FamilyPage from './pages/FamilyPage';
 
 const App = () => {
@@ -19,13 +18,12 @@ const App = () => {
           <Route path="/signup" element={<SignupPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/todos" element={<TodoPage />} />
+              <Route path="/" element={<DashboardPage />} />
               <Route path="/family" element={<FamilyPage />} />
-              <Route path="/" element={<Navigate to="/calendar" replace />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
+
         </Routes>
       </FamilyProvider>
     </AuthProvider>

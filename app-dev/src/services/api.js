@@ -2,10 +2,9 @@ const BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'pro
 
 const getHeaders = () => {
   const headers = { 'Content-Type': 'application/json' };
-  const user = localStorage.getItem('user');
-  if (user) {
-    const { id } = JSON.parse(user);
-    headers['x-user-id'] = id;
+  const token = localStorage.getItem('token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
 };

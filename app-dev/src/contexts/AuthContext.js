@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
     const data = await authService.login(credentials);
     setUser(data.user);
     localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('token', data.token);
     return data.user;
   }, []);
 
@@ -26,12 +27,14 @@ export const AuthProvider = ({ children }) => {
     const data = await authService.signup(userData);
     setUser(data.user);
     localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('token', data.token);
     return data.user;
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   }, []);
 
   return (

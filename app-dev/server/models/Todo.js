@@ -6,7 +6,7 @@ const todoSchema = new mongoose.Schema({
   priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
   dueDate: { type: String, default: '' },
   completed: { type: Boolean, default: false },
-  familyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Family', required: true },
+  familyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Family', default: null },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
 

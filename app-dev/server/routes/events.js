@@ -6,10 +6,13 @@ const router = express.Router();
 
 router.use(auth);
 
+const ownerQuery = (user) =>
+  user.familyId ? { familyId: user.familyId } : { createdBy: user._id };
+
 router.get('/', async (req, res) => {
   try {
     const { year, month } = req.query;
-    const query = { familyId: req.user.familyId };
+    const query = ownerQuery(req.user);
 
     if (year && month) {
       const prefix = `${year}-${String(month).padStart(2, '0')}`;
@@ -37,7 +40,7 @@ router.post('/', async (req, res) => {
       date,
       time: time || '',
       color: color || '#3b82f6',
-      familyId: req.user.familyId,
+      familyId: req.user.familyId || null,
       createdBy: req.user._id,
     });
 
@@ -50,7 +53,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const event = await Event.findOneAndUpdate(
-      { _id: req.params.id, familyId: req.user.familyId },
+      { _id: req.params.id, ...ownerQuery(req.user) },
       { $set: req.body },
       { new: true }
     );
@@ -67,7 +70,7 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const event = await Event.findOneAndDelete({ _id: req.params.id, familyId: req.user.familyId });
+    const event = await Event.findOneAndDelete({ _id: req.params.id, ...ownerQuery(req.user) });
 
     if (!event) {
       return res.status(404).json({ error: 'Event not found' });

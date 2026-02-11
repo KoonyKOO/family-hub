@@ -6,9 +6,12 @@ const router = express.Router();
 
 router.use(auth);
 
+const ownerQuery = (user) =>
+  user.familyId ? { familyId: user.familyId } : { createdBy: user._id };
+
 router.get('/', async (req, res) => {
   try {
-    const todos = await Todo.find({ familyId: req.user.familyId }).sort({ createdAt: -1 });
+    const todos = await Todo.find(ownerQuery(req.user)).sort({ createdAt: -1 });
     res.json({ todos: todos.map((t) => ({ id: t._id, ...t.toObject() })) });
   } catch {
     res.status(500).json({ error: 'Failed to fetch todos' });
@@ -28,7 +31,7 @@ router.post('/', async (req, res) => {
       description: description || '',
       priority: priority || 'medium',
       dueDate: dueDate || '',
-      familyId: req.user.familyId,
+      familyId: req.user.familyId || null,
       createdBy: req.user._id,
     });
 
@@ -41,7 +44,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const todo = await Todo.findOneAndUpdate(
-      { _id: req.params.id, familyId: req.user.familyId },
+      { _id: req.params.id, ...ownerQuery(req.user) },
       { $set: req.body },
       { new: true }
     );
@@ -58,7 +61,7 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const todo = await Todo.findOneAndDelete({ _id: req.params.id, familyId: req.user.familyId });
+    const todo = await Todo.findOneAndDelete({ _id: req.params.id, ...ownerQuery(req.user) });
 
     if (!todo) {
       return res.status(404).json({ error: 'Todo not found' });

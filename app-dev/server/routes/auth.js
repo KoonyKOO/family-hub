@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { getJwtSecret } = require('../config');
 const { validateSignup, validateLogin } = require('../middleware/validate');
+const { success, error } = require('../lib/response');
 
 const router = express.Router();
 
@@ -15,15 +16,15 @@ router.post('/signup', validateSignup, async (req, res) => {
 
     const existing = await User.findOne({ email });
     if (existing) {
-      return res.status(400).json({ error: 'Email already registered' });
+      return error(res, '이미 등록된 이메일입니다.', 400);
     }
 
     const user = await User.create({ name, email, password });
     const token = signToken(user._id);
     const safeUser = { id: user._id, name: user.name, email: user.email, familyId: user.familyId };
-    res.status(201).json({ user: safeUser, token });
+    return success(res, { user: safeUser, token }, 201);
   } catch (err) {
-    res.status(500).json({ error: 'Signup failed' });
+    return error(res, '회원가입에 실패했습니다. 다시 시도해주세요.');
   }
 });
 
@@ -33,14 +34,14 @@ router.post('/login', validateLogin, async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return error(res, '이메일 또는 비밀번호가 올바르지 않습니다.', 401);
     }
 
     const token = signToken(user._id);
     const safeUser = { id: user._id, name: user.name, email: user.email, familyId: user.familyId };
-    res.json({ user: safeUser, token });
+    return success(res, { user: safeUser, token });
   } catch (err) {
-    res.status(500).json({ error: 'Login failed' });
+    return error(res, '로그인에 실패했습니다. 다시 시도해주세요.');
   }
 });
 

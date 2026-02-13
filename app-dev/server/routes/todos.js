@@ -3,6 +3,7 @@ const Todo = require('../models/Todo');
 const auth = require('../middleware/auth');
 const { validateTodo, validateTodoUpdate } = require('../middleware/validate');
 const { notifyFamily } = require('../lib/pushService');
+const { success, error } = require('../lib/response');
 
 const router = express.Router();
 
@@ -14,9 +15,9 @@ const ownerQuery = (user) =>
 router.get('/', async (req, res) => {
   try {
     const todos = await Todo.find(ownerQuery(req.user)).sort({ createdAt: -1 });
-    res.json({ todos: todos.map((t) => ({ id: t._id, ...t.toObject() })) });
+    return success(res, { todos: todos.map((t) => ({ id: t._id, ...t.toObject() })) });
   } catch {
-    res.status(500).json({ error: 'Failed to fetch todos' });
+    return error(res, '할일을 불러오는데 실패했습니다.');
   }
 });
 
@@ -42,9 +43,9 @@ router.post('/', validateTodo, async (req, res) => {
       }).catch(() => {});
     }
 
-    res.status(201).json({ todo: { id: todo._id, ...todo.toObject() } });
+    return success(res, { todo: { id: todo._id, ...todo.toObject() } }, 201);
   } catch {
-    res.status(500).json({ error: 'Failed to create todo' });
+    return error(res, '할일 추가에 실패했습니다.');
   }
 });
 
@@ -66,12 +67,12 @@ router.put('/:id', validateTodoUpdate, async (req, res) => {
     );
 
     if (!todo) {
-      return res.status(404).json({ error: 'Todo not found' });
+      return error(res, '할일을 찾을 수 없습니다.', 404);
     }
 
-    res.json({ todo: { id: todo._id, ...todo.toObject() } });
+    return success(res, { todo: { id: todo._id, ...todo.toObject() } });
   } catch {
-    res.status(500).json({ error: 'Failed to update todo' });
+    return error(res, '할일 수정에 실패했습니다.');
   }
 });
 
@@ -80,7 +81,7 @@ router.delete('/:id', async (req, res) => {
     const todo = await Todo.findById(req.params.id);
 
     if (!todo) {
-      return res.status(404).json({ error: 'Todo not found' });
+      return error(res, '할일을 찾을 수 없습니다.', 404);
     }
 
     const isOwner = todo.createdBy.toString() === req.user._id.toString();
@@ -88,13 +89,13 @@ router.delete('/:id', async (req, res) => {
       req.user.familyId.toString() === todo.familyId.toString();
 
     if (!isOwner && !isFamilyMember) {
-      return res.status(403).json({ error: 'Not authorized to delete this todo' });
+      return error(res, '이 할일을 삭제할 권한이 없습니다.', 403);
     }
 
     await Todo.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
+    return success(res);
   } catch {
-    res.status(500).json({ error: 'Failed to delete todo' });
+    return error(res, '할일 삭제에 실패했습니다.');
   }
 });
 

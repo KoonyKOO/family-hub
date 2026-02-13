@@ -3,6 +3,7 @@ const Event = require('../models/Event');
 const auth = require('../middleware/auth');
 const { validateEvent, validateEventUpdate } = require('../middleware/validate');
 const { notifyFamily } = require('../lib/pushService');
+const { success, error } = require('../lib/response');
 
 const router = express.Router();
 
@@ -22,9 +23,9 @@ router.get('/', async (req, res) => {
     }
 
     const events = await Event.find(query).sort({ date: 1, time: 1 });
-    res.json({ events: events.map((e) => ({ id: e._id, ...e.toObject() })) });
+    return success(res, { events: events.map((e) => ({ id: e._id, ...e.toObject() })) });
   } catch {
-    res.status(500).json({ error: 'Failed to fetch events' });
+    return error(res, '일정을 불러오는데 실패했습니다.');
   }
 });
 
@@ -50,9 +51,9 @@ router.post('/', validateEvent, async (req, res) => {
       }).catch(() => {});
     }
 
-    res.status(201).json({ event: { id: event._id, ...event.toObject() } });
+    return success(res, { event: { id: event._id, ...event.toObject() } }, 201);
   } catch {
-    res.status(500).json({ error: 'Failed to create event' });
+    return error(res, '일정 추가에 실패했습니다.');
   }
 });
 
@@ -74,12 +75,12 @@ router.put('/:id', validateEventUpdate, async (req, res) => {
     );
 
     if (!event) {
-      return res.status(404).json({ error: 'Event not found' });
+      return error(res, '일정을 찾을 수 없습니다.', 404);
     }
 
-    res.json({ event: { id: event._id, ...event.toObject() } });
+    return success(res, { event: { id: event._id, ...event.toObject() } });
   } catch {
-    res.status(500).json({ error: 'Failed to update event' });
+    return error(res, '일정 수정에 실패했습니다.');
   }
 });
 
@@ -88,7 +89,7 @@ router.delete('/:id', async (req, res) => {
     const event = await Event.findById(req.params.id);
 
     if (!event) {
-      return res.status(404).json({ error: 'Event not found' });
+      return error(res, '일정을 찾을 수 없습니다.', 404);
     }
 
     const isOwner = event.createdBy.toString() === req.user._id.toString();
@@ -96,13 +97,13 @@ router.delete('/:id', async (req, res) => {
       req.user.familyId.toString() === event.familyId.toString();
 
     if (!isOwner && !isFamilyMember) {
-      return res.status(403).json({ error: 'Not authorized to delete this event' });
+      return error(res, '이 일정을 삭제할 권한이 없습니다.', 403);
     }
 
     await Event.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
+    return success(res);
   } catch {
-    res.status(500).json({ error: 'Failed to delete event' });
+    return error(res, '일정 삭제에 실패했습니다.');
   }
 });
 

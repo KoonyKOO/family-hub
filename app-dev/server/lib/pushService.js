@@ -15,14 +15,11 @@ const getWebPush = () => {
   return webpush;
 };
 
-const notifyFamily = async (familyId, excludeUserId, payload) => {
+const notifyFamily = async (familyId, payload) => {
   if (!familyId || !process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return;
 
   const wp = getWebPush();
-  const subscriptions = await PushSubscription.find({
-    familyId,
-    userId: { $ne: excludeUserId },
-  });
+  const subscriptions = await PushSubscription.find({ familyId });
 
   const results = await Promise.allSettled(
     subscriptions.map(async (sub) => {

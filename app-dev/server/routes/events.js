@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
     });
 
     if (req.user.familyId) {
-      await notifyFamily(req.user.familyId, req.user._id, {
+      await notifyFamily(req.user.familyId, {
         title: 'Family Hub',
         body: `${req.user.name}님이 '${title}' 일정을 ${date}에 추가했습니다`,
         url: '/',

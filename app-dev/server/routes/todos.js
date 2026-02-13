@@ -1,6 +1,7 @@
 const express = require('express');
 const Todo = require('../models/Todo');
 const auth = require('../middleware/auth');
+const { validateTodo, validateTodoUpdate } = require('../middleware/validate');
 const { notifyFamily } = require('../lib/pushService');
 
 const router = express.Router();
@@ -19,13 +20,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', validateTodo, async (req, res) => {
   try {
     const { title, description, priority, dueDate, dueTime } = req.body;
-
-    if (!title) {
-      return res.status(400).json({ error: 'Title is required' });
-    }
 
     const todo = await Todo.create({
       title,
@@ -51,11 +48,20 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+const TODO_UPDATABLE_FIELDS = ['title', 'description', 'priority', 'dueDate', 'dueTime', 'completed'];
+
+router.put('/:id', validateTodoUpdate, async (req, res) => {
   try {
+    const updates = {};
+    for (const field of TODO_UPDATABLE_FIELDS) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+
     const todo = await Todo.findOneAndUpdate(
       { _id: req.params.id, ...ownerQuery(req.user) },
-      { $set: req.body },
+      { $set: updates },
       { new: true }
     );
 
@@ -71,12 +77,21 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const todo = await Todo.findOneAndDelete({ _id: req.params.id, ...ownerQuery(req.user) });
+    const todo = await Todo.findById(req.params.id);
 
     if (!todo) {
       return res.status(404).json({ error: 'Todo not found' });
     }
 
+    const isOwner = todo.createdBy.toString() === req.user._id.toString();
+    const isFamilyMember = req.user.familyId && todo.familyId &&
+      req.user.familyId.toString() === todo.familyId.toString();
+
+    if (!isOwner && !isFamilyMember) {
+      return res.status(403).json({ error: 'Not authorized to delete this todo' });
+    }
+
+    await Todo.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: 'Failed to delete todo' });

@@ -1,6 +1,7 @@
 const express = require('express');
 const Event = require('../models/Event');
 const auth = require('../middleware/auth');
+const { validateEvent, validateEventUpdate } = require('../middleware/validate');
 const { notifyFamily } = require('../lib/pushService');
 
 const router = express.Router();
@@ -27,13 +28,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', validateEvent, async (req, res) => {
   try {
     const { title, description, date, time, color } = req.body;
-
-    if (!title || !date) {
-      return res.status(400).json({ error: 'Title and date are required' });
-    }
 
     const event = await Event.create({
       title,
@@ -59,11 +56,20 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+const EVENT_UPDATABLE_FIELDS = ['title', 'description', 'date', 'time', 'color'];
+
+router.put('/:id', validateEventUpdate, async (req, res) => {
   try {
+    const updates = {};
+    for (const field of EVENT_UPDATABLE_FIELDS) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+
     const event = await Event.findOneAndUpdate(
       { _id: req.params.id, ...ownerQuery(req.user) },
-      { $set: req.body },
+      { $set: updates },
       { new: true }
     );
 
@@ -79,12 +85,21 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const event = await Event.findOneAndDelete({ _id: req.params.id, ...ownerQuery(req.user) });
+    const event = await Event.findById(req.params.id);
 
     if (!event) {
       return res.status(404).json({ error: 'Event not found' });
     }
 
+    const isOwner = event.createdBy.toString() === req.user._id.toString();
+    const isFamilyMember = req.user.familyId && event.familyId &&
+      req.user.familyId.toString() === event.familyId.toString();
+
+    if (!isOwner && !isFamilyMember) {
+      return res.status(403).json({ error: 'Not authorized to delete this event' });
+    }
+
+    await Event.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: 'Failed to delete event' });

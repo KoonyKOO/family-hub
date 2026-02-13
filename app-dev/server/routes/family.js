@@ -4,6 +4,7 @@ const Family = require('../models/Family');
 const User = require('../models/User');
 const PushSubscription = require('../models/PushSubscription');
 const auth = require('../middleware/auth');
+const { validateFamilyCreate, validateFamilyJoin } = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -31,13 +32,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', validateFamilyCreate, async (req, res) => {
   try {
     const { name } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ error: 'Family name is required' });
-    }
 
     if (req.user.familyId) {
       return res.status(400).json({ error: 'Already in a family' });
@@ -60,13 +57,9 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.post('/join', async (req, res) => {
+router.post('/join', validateFamilyJoin, async (req, res) => {
   try {
     const { inviteCode } = req.body;
-
-    if (!inviteCode) {
-      return res.status(400).json({ error: 'Invite code is required' });
-    }
 
     if (req.user.familyId) {
       return res.status(400).json({ error: 'Already in a family' });

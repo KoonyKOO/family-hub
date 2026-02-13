@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'family-hub-dev-secret';
+const { getJwtSecret } = require('../config');
 
 const auth = async (req, res, next) => {
   const header = req.headers.authorization;
@@ -11,7 +10,7 @@ const auth = async (req, res, next) => {
 
   try {
     const token = header.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).json({ error: 'User not found' });

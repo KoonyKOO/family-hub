@@ -1,11 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./db');
+const { validateEnv } = require('./config');
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
 const todoRoutes = require('./routes/todos');
 const familyRoutes = require('./routes/family');
 const pushRoutes = require('./routes/push');
+
+validateEnv();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

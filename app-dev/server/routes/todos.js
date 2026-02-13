@@ -40,6 +40,7 @@ router.post('/', validateTodo, async (req, res) => {
         title: 'Family Hub',
         body: `${req.user.name}님이 '${title}' 할일을 추가했습니다`,
         url: '/',
+        channel: 'todos:changed',
       }).catch(() => {});
     }
 
@@ -70,6 +71,15 @@ router.put('/:id', validateTodoUpdate, async (req, res) => {
       return error(res, '할일을 찾을 수 없습니다.', 404);
     }
 
+    if (req.user.familyId) {
+      await notifyFamily(req.user.familyId, {
+        title: 'Family Hub',
+        body: `${req.user.name}님이 '${todo.title}' 할일을 수정했습니다`,
+        url: '/',
+        channel: 'todos:changed',
+      }).catch(() => {});
+    }
+
     return success(res, { todo: { id: todo._id, ...todo.toObject() } });
   } catch {
     return error(res, '할일 수정에 실패했습니다.');
@@ -93,6 +103,16 @@ router.delete('/:id', async (req, res) => {
     }
 
     await Todo.findByIdAndDelete(req.params.id);
+
+    if (req.user.familyId) {
+      await notifyFamily(req.user.familyId, {
+        title: 'Family Hub',
+        body: `${req.user.name}님이 '${todo.title}' 할일을 삭제했습니다`,
+        url: '/',
+        channel: 'todos:changed',
+      }).catch(() => {});
+    }
+
     return success(res);
   } catch {
     return error(res, '할일 삭제에 실패했습니다.');

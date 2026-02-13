@@ -48,6 +48,7 @@ router.post('/', validateEvent, async (req, res) => {
         title: 'Family Hub',
         body: `${req.user.name}님이 '${title}' 일정을 ${date}에 추가했습니다`,
         url: '/',
+        channel: 'events:changed',
       }).catch(() => {});
     }
 
@@ -78,6 +79,15 @@ router.put('/:id', validateEventUpdate, async (req, res) => {
       return error(res, '일정을 찾을 수 없습니다.', 404);
     }
 
+    if (req.user.familyId) {
+      await notifyFamily(req.user.familyId, {
+        title: 'Family Hub',
+        body: `${req.user.name}님이 '${event.title}' 일정을 수정했습니다`,
+        url: '/',
+        channel: 'events:changed',
+      }).catch(() => {});
+    }
+
     return success(res, { event: { id: event._id, ...event.toObject() } });
   } catch {
     return error(res, '일정 수정에 실패했습니다.');
@@ -101,6 +111,16 @@ router.delete('/:id', async (req, res) => {
     }
 
     await Event.findByIdAndDelete(req.params.id);
+
+    if (req.user.familyId) {
+      await notifyFamily(req.user.familyId, {
+        title: 'Family Hub',
+        body: `${req.user.name}님이 '${event.title}' 일정을 삭제했습니다`,
+        url: '/',
+        channel: 'events:changed',
+      }).catch(() => {});
+    }
+
     return success(res);
   } catch {
     return error(res, '일정 삭제에 실패했습니다.');

@@ -1,18 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import CalendarGrid from './CalendarGrid';
 import EventList from './EventList';
 import EventForm from './EventForm';
 import eventService from '../../services/eventService';
+import useOptimisticList from '../../hooks/useOptimisticList';
+import usePolling from '../../hooks/usePolling';
+import useSyncChannel from '../../hooks/useSyncChannel';
+import useOnlineStatus from '../../hooks/useOnlineStatus';
 
 const Calendar = () => {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [selectedDate, setSelectedDate] = useState(now.toISOString().slice(0, 10));
-  const [events, setEvents] = useState([]);
+  const { items: events, setItems: setEvents, optimisticAdd, optimisticUpdate, optimisticDelete, isPending } = useOptimisticList();
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [error, setError] = useState('');
+  const isOnline = useOnlineStatus();
 
   const monthLabel = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
 
@@ -21,13 +26,12 @@ const Calendar = () => {
       const data = await eventService.getEvents({ year, month: month + 1 });
       setEvents(data.events || []);
     } catch {
-      setEvents([]);
+      // Keep existing data on fetch failure
     }
-  }, [year, month]);
+  }, [year, month, setEvents]);
 
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+  const { triggerNow } = usePolling(fetchEvents, { intervalMs: 15000, enabled: isOnline });
+  useSyncChannel('events:changed', triggerNow);
 
   const navigateMonth = (delta) => {
     let newMonth = month + delta;
@@ -44,13 +48,17 @@ const Calendar = () => {
     try {
       setError('');
       if (formData.id) {
-        await eventService.updateEvent(formData.id, formData);
+        await optimisticUpdate(formData.id, formData,
+          () => eventService.updateEvent(formData.id, formData)
+        );
       } else {
-        await eventService.createEvent(formData);
+        await optimisticAdd(
+          { ...formData, color: formData.color || '#3b82f6' },
+          () => eventService.createEvent(formData)
+        );
       }
       setShowForm(false);
       setEditingEvent(null);
-      await fetchEvents();
     } catch (err) {
       setError(err.message || 'Failed to save event');
     }
@@ -59,8 +67,7 @@ const Calendar = () => {
   const handleDelete = async (id) => {
     try {
       setError('');
-      await eventService.deleteEvent(id);
-      await fetchEvents();
+      await optimisticDelete(id, () => eventService.deleteEvent(id));
     } catch (err) {
       setError(err.message || 'Failed to delete event');
     }
@@ -120,6 +127,7 @@ const Calendar = () => {
           ) : (
             <EventList
               events={eventsForDate}
+              isPending={isPending}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onAdd={handleAdd}

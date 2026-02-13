@@ -1,6 +1,7 @@
 const BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
 
 const ERROR_MESSAGES = {
+  Offline: '오프라인 상태입니다. 인터넷 연결을 확인해주세요.',
   NetworkError: '서버에 연결할 수 없습니다. 인터넷 연결을 확인해주세요.',
   401: '로그인이 필요합니다.',
   403: '접근 권한이 없습니다.',
@@ -35,10 +36,14 @@ const handleResponse = async (response) => {
   return body.data !== undefined ? body.data : body;
 };
 
-const safeFetch = (url, options) =>
-  fetch(url, options).catch(() => {
+const safeFetch = (url, options) => {
+  if (!navigator.onLine) {
+    return Promise.reject(new Error(ERROR_MESSAGES.Offline));
+  }
+  return fetch(url, options).catch(() => {
     throw new Error(ERROR_MESSAGES.NetworkError);
   });
+};
 
 const api = {
   get: (path) =>

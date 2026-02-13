@@ -6,9 +6,9 @@ const PRIORITY_STYLES = {
   low: 'bg-green-100 text-green-700',
 };
 
-const TodoItem = ({ todo, onToggle, onEdit, onDelete }) => {
+const TodoItem = ({ todo, isPending, onToggle, onEdit, onDelete }) => {
   return (
-    <li className="rounded-lg border border-gray-200 p-2.5 sm:p-3">
+    <li className={`rounded-lg border border-gray-200 p-2.5 sm:p-3 transition-opacity ${isPending ? 'opacity-60' : ''}`}>
       <div className="flex items-start gap-2 sm:gap-3">
         <input
           type="checkbox"

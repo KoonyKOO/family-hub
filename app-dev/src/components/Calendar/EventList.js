@@ -1,6 +1,6 @@
 import React from 'react';
 
-const EventList = ({ events = [], onEdit, onDelete, onAdd }) => {
+const EventList = ({ events = [], isPending, onEdit, onDelete, onAdd }) => {
   if (events.length === 0) {
     return (
       <div className="py-8 text-center">
@@ -30,7 +30,7 @@ const EventList = ({ events = [], onEdit, onDelete, onAdd }) => {
         {events.map((event) => (
           <li
             key={event.id}
-            className="rounded-lg border border-gray-200 p-2.5 sm:p-3"
+            className={`rounded-lg border border-gray-200 p-2.5 sm:p-3 transition-opacity ${isPending?.(event.id) ? 'opacity-60' : ''}`}
           >
             <div className="flex items-start gap-2">
               {event.color && (

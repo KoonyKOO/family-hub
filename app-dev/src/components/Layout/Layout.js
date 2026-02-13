@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import OfflineBanner from '../shared/OfflineBanner';
 
 const navItems = [
   { to: '/', label: 'Dashboard' },
@@ -46,6 +47,7 @@ const Layout = () => {
           </div>
         </div>
       </nav>
+      <OfflineBanner />
       <main className="mx-auto max-w-7xl px-3 py-3 sm:p-4">
         <Outlet />
       </main>

@@ -1,15 +1,16 @@
 const express = require('express');
 const PushSubscription = require('../models/PushSubscription');
 const auth = require('../middleware/auth');
+const { success, error } = require('../lib/response');
 
 const router = express.Router();
 
 router.get('/vapid-public-key', (req, res) => {
   const key = process.env.VAPID_PUBLIC_KEY;
   if (!key) {
-    return res.status(500).json({ error: 'VAPID key not configured' });
+    return error(res, '푸시 알림이 설정되지 않았습니다.');
   }
-  res.json({ key });
+  return success(res, { key });
 });
 
 router.use(auth);
@@ -19,7 +20,7 @@ router.post('/subscribe', async (req, res) => {
     const { subscription } = req.body;
 
     if (!subscription || !subscription.endpoint || !subscription.keys) {
-      return res.status(400).json({ error: 'Invalid subscription' });
+      return error(res, '잘못된 구독 정보입니다.', 400);
     }
 
     await PushSubscription.findOneAndUpdate(
@@ -32,9 +33,9 @@ router.post('/subscribe', async (req, res) => {
       { upsert: true, new: true }
     );
 
-    res.json({ success: true });
+    return success(res);
   } catch {
-    res.status(500).json({ error: 'Failed to save subscription' });
+    return error(res, '알림 구독에 실패했습니다.');
   }
 });
 
@@ -43,7 +44,7 @@ router.delete('/subscribe', async (req, res) => {
     const { endpoint } = req.body || {};
 
     if (!endpoint) {
-      return res.status(400).json({ error: 'Endpoint is required' });
+      return error(res, '엔드포인트 정보가 필요합니다.', 400);
     }
 
     await PushSubscription.deleteOne({
@@ -51,9 +52,9 @@ router.delete('/subscribe', async (req, res) => {
       'subscription.endpoint': endpoint,
     });
 
-    res.json({ success: true });
+    return success(res);
   } catch {
-    res.status(500).json({ error: 'Failed to remove subscription' });
+    return error(res, '알림 구독 해제에 실패했습니다.');
   }
 });
 

@@ -1,29 +1,33 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import TodoItem from './TodoItem';
 import TodoForm from './TodoForm';
 import todoService from '../../services/todoService';
+import useOptimisticList from '../../hooks/useOptimisticList';
+import usePolling from '../../hooks/usePolling';
+import useSyncChannel from '../../hooks/useSyncChannel';
+import useOnlineStatus from '../../hooks/useOnlineStatus';
 
 const FILTERS = ['all', 'active', 'completed'];
 
 const TodoList = () => {
-  const [todos, setTodos] = useState([]);
+  const { items: todos, setItems: setTodos, optimisticAdd, optimisticUpdate, optimisticDelete, isPending } = useOptimisticList();
   const [filter, setFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
   const [error, setError] = useState('');
+  const isOnline = useOnlineStatus();
 
   const fetchTodos = useCallback(async () => {
     try {
       const data = await todoService.getTodos();
       setTodos(data.todos || []);
     } catch {
-      setTodos([]);
+      // Keep existing data on fetch failure
     }
-  }, []);
+  }, [setTodos]);
 
-  useEffect(() => {
-    fetchTodos();
-  }, [fetchTodos]);
+  const { triggerNow } = usePolling(fetchTodos, { intervalMs: 15000, enabled: isOnline });
+  useSyncChannel('todos:changed', triggerNow);
 
   const filteredTodos = todos.filter((t) => {
     if (filter === 'active') return !t.completed;
@@ -40,13 +44,17 @@ const TodoList = () => {
     try {
       setError('');
       if (formData.id) {
-        await todoService.updateTodo(formData.id, formData);
+        await optimisticUpdate(formData.id, formData,
+          () => todoService.updateTodo(formData.id, formData)
+        );
       } else {
-        await todoService.createTodo(formData);
+        await optimisticAdd(
+          { ...formData, completed: false, priority: formData.priority || 'medium' },
+          () => todoService.createTodo(formData)
+        );
       }
       setShowForm(false);
       setEditingTodo(null);
-      await fetchTodos();
     } catch (err) {
       setError(err.message || 'Failed to save todo');
     }
@@ -55,8 +63,9 @@ const TodoList = () => {
   const handleToggle = async (todo) => {
     try {
       setError('');
-      await todoService.updateTodo(todo.id, { ...todo, completed: !todo.completed });
-      await fetchTodos();
+      await optimisticUpdate(todo.id, { completed: !todo.completed },
+        () => todoService.updateTodo(todo.id, { ...todo, completed: !todo.completed })
+      );
     } catch (err) {
       setError(err.message || 'Failed to update todo');
     }
@@ -65,8 +74,7 @@ const TodoList = () => {
   const handleDelete = async (id) => {
     try {
       setError('');
-      await todoService.deleteTodo(id);
-      await fetchTodos();
+      await optimisticDelete(id, () => todoService.deleteTodo(id));
     } catch (err) {
       setError(err.message || 'Failed to delete todo');
     }
@@ -123,6 +131,7 @@ const TodoList = () => {
             <TodoItem
               key={todo.id}
               todo={todo}
+              isPending={isPending(todo.id)}
               onToggle={handleToggle}
               onEdit={handleEdit}
               onDelete={handleDelete}

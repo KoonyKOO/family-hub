@@ -1,6 +1,7 @@
 const express = require('express');
 const Todo = require('../models/Todo');
 const auth = require('../middleware/auth');
+const { notifyFamily } = require('../lib/pushService');
 
 const router = express.Router();
 
@@ -35,6 +36,14 @@ router.post('/', async (req, res) => {
       familyId: req.user.familyId || null,
       createdBy: req.user._id,
     });
+
+    if (req.user.familyId) {
+      await notifyFamily(req.user.familyId, req.user._id, {
+        title: 'Family Hub',
+        body: `${req.user.name}님이 '${title}' 할일을 추가했습니다`,
+        url: '/',
+      }).catch(() => {});
+    }
 
     res.status(201).json({ todo: { id: todo._id, ...todo.toObject() } });
   } catch {

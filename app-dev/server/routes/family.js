@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const Family = require('../models/Family');
 const User = require('../models/User');
+const PushSubscription = require('../models/PushSubscription');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -50,6 +51,7 @@ router.post('/', async (req, res) => {
 
     req.user.familyId = family._id;
     await req.user.save();
+    await PushSubscription.updateMany({ userId: req.user._id }, { familyId: family._id });
 
     const members = [{ id: req.user._id, name: req.user.name, email: req.user.email, familyId: family._id }];
     res.status(201).json({ family: { id: family._id, name: family.name, inviteCode: family.inviteCode }, members });
@@ -77,6 +79,7 @@ router.post('/join', async (req, res) => {
 
     req.user.familyId = family._id;
     await req.user.save();
+    await PushSubscription.updateMany({ userId: req.user._id }, { familyId: family._id });
 
     const members = await User.find({ familyId: family._id }).select('-password');
     const safeMembers = members.map((m) => ({ id: m._id, name: m.name, email: m.email, familyId: m.familyId }));
@@ -95,6 +98,7 @@ router.post('/leave', async (req, res) => {
 
     req.user.familyId = null;
     await req.user.save();
+    await PushSubscription.updateMany({ userId: req.user._id }, { familyId: null });
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: 'Failed to leave family' });

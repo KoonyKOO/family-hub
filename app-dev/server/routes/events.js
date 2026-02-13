@@ -1,6 +1,7 @@
 const express = require('express');
 const Event = require('../models/Event');
 const auth = require('../middleware/auth');
+const { notifyFamily } = require('../lib/pushService');
 
 const router = express.Router();
 
@@ -43,6 +44,14 @@ router.post('/', async (req, res) => {
       familyId: req.user.familyId || null,
       createdBy: req.user._id,
     });
+
+    if (req.user.familyId) {
+      await notifyFamily(req.user.familyId, req.user._id, {
+        title: 'Family Hub',
+        body: `${req.user.name}님이 '${title}' 일정을 ${date}에 추가했습니다`,
+        url: '/',
+      }).catch(() => {});
+    }
 
     res.status(201).json({ event: { id: event._id, ...event.toObject() } });
   } catch {

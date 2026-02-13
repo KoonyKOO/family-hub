@@ -35,10 +35,11 @@ const api = {
       body: JSON.stringify(body),
     }).then(handleResponse),
 
-  delete: (path) =>
+  delete: (path, body) =>
     fetch(`${BASE_URL}${path}`, {
       method: 'DELETE',
       headers: getHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
     }).then(handleResponse),
 };
 

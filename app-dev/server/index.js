@@ -6,6 +6,7 @@ const eventRoutes = require('./routes/events');
 const todoRoutes = require('./routes/todos');
 const familyRoutes = require('./routes/family');
 const pushRoutes = require('./routes/push');
+const memoRoutes = require('./routes/memos');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -28,6 +29,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/todos', todoRoutes);
 app.use('/api/family', familyRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/memos', memoRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
